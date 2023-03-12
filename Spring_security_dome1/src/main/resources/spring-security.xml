@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                  http://www.springframework.org/schema/beans/spring-beans.xsd
+                  http://www.springframework.org/schema/mvc
+                  http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                  http://www.springframework.org/schema/context
+                  http://www.springframework.org/schema/context/spring-context.xsd
+                          http://www.springframework.org/schema/security
+                          http://www.springframework.org/schema/security/spring-security.xsd">
+
+
+    <!--扫描包-->
+    <context:component-scan base-package="com.hbwl"/>
+
+    <!--指定哪些路径不要拦截，此处为css、img下的所以文件不需要拦截-->
+    <security:http security="none" pattern="/css/**"/>
+    <security:http security="none" pattern="/img/**"/>
+    <security:http security="none" pattern="/login.html"/>
+
+
+    <!--授权  带有"http"
+    ①可配置哪些链接可放行（没有认证可放行的资源）
+    ②定义那些链接、功能不可放行（需要角色、权限才能放行访问）
+    -->
+    <!--auto-config为自动配置，由security生成登录页面和登出页面
+    use-expressions="true" 使用表达式的方式控制权限-->
+    <security:http auto-config="true" use-expressions="true">
+        <!--security:intercept-url 定义哪些链接不可以放行，需要哪些角色和权限才能放行
+        pattern="/**"  拦截所有资源
+        access="hasRole('ROLE_ADMIN')" 通过表达式开启，所以可使用表达式。表示具有ROLE_ADMIN的角色才能访问-->
+        <security:intercept-url pattern="/**" access="hasRole('ROLE_ADMIN')"/>
+
+        <!--登录表单设置
+        login-page  指定登录页面
+        username-parameter  使用登录名的名称，默认username
+        password-parameter  密码，默认password
+        login-processing-url    登录的url地址
+        default-target-url  登录后的url地址
+        authentication-failure-forward-url 失败后的url地址
+        always-use-default-target   登录成功后。始终跳转default-taget-url指定地址。即登录成功的默认地址
+        -->
+        <security:form-login login-page="/login.html"
+                             username-parameter="username"
+                             password-parameter="password"
+                             login-processing-url="/login.do"
+                             default-target-url="/index.html"
+                             authentication-failure-forward-url="/login.html"
+                             always-use-default-target="true"/>
+        <!--关闭csrf过滤器-->
+        <security:csrf disabled="true"/>
+    </security:http>
+
+
+    <!--认证
+    认证管理：定义登录账号和密码，并授予用户访问角色的权限
+    authentication:身份认证
+    -->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="userService">
+<!--            <security:user-service>-->
+                <!--此时写死登录账号和密码。后续会查询数据库-->
+<!--                <security:user name="admin" authorities="ROLE_ADMIN" password="{noop}admin"/>-->
+<!--            </security:user-service>-->
+
+            <!--指定加密方式-->
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!--配置加密对象-->
+    <bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+</beans>
